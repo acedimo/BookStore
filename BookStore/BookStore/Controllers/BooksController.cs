@@ -20,9 +20,9 @@ namespace BookStore.Controllers
         }
 
         [HttpGet]
-        public IActionResult Get()
+        public IActionResult Get(string title, string author)
         {
-            var books = _booksService.GetAll();
+            var books = _booksService.GetWithFilters(title, author);
 
             return Ok(books.Select(x => x.ToDtoModel()));
         }
@@ -39,15 +39,20 @@ namespace BookStore.Controllers
         [HttpPost]
         public IActionResult Create(BookDto book)
         {
-            var status = _booksService.Create(book.ToDomainModel());
-            if (status)
+            if (ModelState.IsValid)
             {
-                return Ok();
+                var status = _booksService.Create(book.ToDomainModel());
+                if (status)
+                {
+                    return Ok();
+                }
+                else
+                {
+                    ModelState.AddModelError("", "Book with title already exists");
+                }
             }
-            else
-            {
-                return BadRequest();
-            }
+
+            return BadRequest(ModelState);
         }
 
         [HttpDelete]
@@ -61,8 +66,16 @@ namespace BookStore.Controllers
         [HttpPut]
         public IActionResult Update(BookDto book)
         {
-            _booksService.Update(book.ToDomainModel());
-            return Ok();
+            if (ModelState.IsValid)
+            {
+                _booksService.Update(book.ToDomainModel());
+                return Ok();
+            }
+            else
+            {
+                return BadRequest(ModelState);
+            }
+            
         }
     }
 }
